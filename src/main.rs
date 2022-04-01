@@ -3,6 +3,7 @@
 //! Tasks can contain sub tasks.
 //! You can save the tasks to a file.
 mod date;
+
 use date::Date;
 
 #[derive(Debug)]
@@ -22,7 +23,7 @@ impl Task {
             description,
             importance,
             due_date,
-            date_created: Date::current_date(),
+            date_created: Date::get_current_date(),
             sub_tasks: Vec::new(),
         }
     }
@@ -36,10 +37,9 @@ impl Task {
         }
 
         if let Some(due_date) = &self.due_date {
-            // print due date in gray
-            // print!("\x1b[1;37;30m [{}]\x1b[0m", self.due_date);
+            let time_left = due_date.get_time_left();
 
-            println!("\t\x1b[1;37;30m [due: {}]\x1b[0m", due_date);
+            println!("\t\x1b[1;37;30m [due in {}]\x1b[0m", time_left);
         }
 
         if self.description != "" {
@@ -57,9 +57,9 @@ fn main() {
         "Task 1".to_string(),
         "This is a task".to_string(),
         1,
-        Some(Date::new(2020, 1, 12, 0, 0, 0)),
+        Some(Date::new(2022, 4, 5, 0, 0, 0)),
     );
 
     task.print_task();
-    println!("{}", task.date_created);
+    println!("created {} ago", task.date_created.get_time_left());
 }
