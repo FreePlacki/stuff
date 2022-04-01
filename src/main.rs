@@ -4,26 +4,32 @@
 //! You can save the tasks to a file.
 mod date;
 
-use date::Date;
+use chrono::{Local, TimeZone};
+use date::DateFormat;
 
 #[derive(Debug)]
 struct Task {
     title: String,
     description: String,
     importance: u8,
-    due_date: Option<Date>,
-    date_created: Date,
+    due_date: Option<DateFormat>,
+    date_created: DateFormat,
     sub_tasks: Vec<Task>,
 }
 
 impl Task {
-    fn new(title: String, description: String, importance: u8, due_date: Option<Date>) -> Task {
+    fn new(
+        title: String,
+        description: String,
+        importance: u8,
+        due_date: Option<DateFormat>,
+    ) -> Task {
         Task {
             title,
             description,
             importance,
             due_date,
-            date_created: Date::get_current_date(),
+            date_created: Local::now(),
             sub_tasks: Vec::new(),
         }
     }
@@ -36,8 +42,8 @@ impl Task {
             _ => print!("{}", self.title),
         }
 
-        if let Some(due_date) = &self.due_date {
-            let time_left = due_date.get_time_left();
+        if let Some(due_date) = self.due_date {
+            let time_left = date::get_time_left(due_date);
 
             println!("\t\x1b[1;37;30m [due in {}]\x1b[0m", time_left);
         }
@@ -57,9 +63,9 @@ fn main() {
         "Task 1".to_string(),
         "This is a task".to_string(),
         1,
-        Some(Date::new(2022, 4, 5, 0, 0, 0)),
+        Some(Local.ymd(2022, 4, 17).and_hms(0, 0, 0)),
     );
 
     task.print_task();
-    println!("created {} ago", task.date_created.get_time_left());
+    println!("created {} ago", date::get_time_left(task.date_created));
 }
