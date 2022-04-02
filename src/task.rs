@@ -45,12 +45,12 @@ impl TaskJson {
 
 #[derive(Debug, Clone)]
 pub struct Task {
-    title: String,
-    description: String,
-    importance: u8,
-    due_date: Option<DateFormat>,
-    date_created: DateFormat,
-    sub_tasks: Vec<Task>,
+    pub title: String,
+    pub description: String,
+    pub importance: u8,
+    pub due_date: Option<DateFormat>,
+    pub date_created: DateFormat,
+    pub sub_tasks: Vec<Task>,
 }
 
 impl Task {
@@ -141,8 +141,9 @@ impl TaskList {
     }
 
     pub fn print_tasks(&self) {
-        for task in &self.tasks {
-            task.print_task();
+        for (i, task) in self.tasks.iter().enumerate() {
+            print!("{}: ", i + 1);
+            task.print_header();
         }
     }
 
@@ -161,7 +162,7 @@ impl TaskList {
         let json = serde_json::to_string(&self.json_tasks).unwrap();
 
         match file.write_all(json.as_bytes()) {
-            Ok(_) => println!("Saved to file: {}", file_path),
+            Ok(_) => {},
             Err(e) => println!("Could not write to file: {}", e),
         }
     }

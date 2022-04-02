@@ -54,14 +54,13 @@ fn add_prompt() -> Task {
 
     let mut due: Option<DateFormat>;
     loop {
-        let inp = get_input!("Due date: ", "").to_string()
-            + " "
-            + Local::now().offset().to_string().as_str();
+        let inp = get_input!("Due date: ", "").to_string();
         // allow empty due
         if inp == "" {
             due = None;
             break;
         }
+        let inp = inp + " " + Local::now().offset().to_string().as_str();
 
         // TODO support other formats
         let mut invalid_date = false;
@@ -78,21 +77,101 @@ fn add_prompt() -> Task {
     task
 }
 
+fn edit_prompt(task: Task) -> Task {
+    let mut edited_task = Task::new("".to_string(), "".to_string(), 0, None);
+    println!(
+        "Editing task: {}\n(Press enter to leave unchanged)",
+        task.title
+    );
+    let title = get_input!("Title*: ", task.title);
+    if title != "" {
+        edited_task.title = title;
+    } else {
+        println!("Title cannot be empty!");
+    }
+
+    let description = get_input!("Description: ", task.description.clone());
+    edited_task.description = description;
+
+    let mut importance: u8;
+    loop {
+        importance = get_input!("Importance: ", task.importance.to_string())
+            .parse()
+            .unwrap_or(69);
+        if importance > task::IMPORTANCE_MAX {
+            println!(
+                "Importance must be a number between 0 and {}!",
+                task::IMPORTANCE_MAX
+            );
+        } else {
+            edited_task.importance = importance;
+            break;
+        }
+    }
+
+    let mut due: Option<DateFormat>;
+    loop {
+        let inp = get_input!("Due date: ", "").to_string();
+        // allow empty due
+        if inp == "" {
+            due = task.due_date;
+            break;
+        }
+        let inp = inp + " " + Local::now().offset().to_string().as_str();
+
+        // TODO support other formats
+        let mut invalid_date = false;
+        due = Some(inp.parse().unwrap_or_else(|_| {
+            println!("Invalid date! (use format: YYYY-MM-DD HH:MM:SS)");
+            invalid_date = true;
+            Local::now()
+        }));
+        if !invalid_date {
+            break;
+        }
+    }
+    edited_task.due_date = due;
+    edited_task
+}
+
 fn run_prompt(task_list: &mut TaskList) {
     loop {
         let input = get_input!("\n> ", "").to_lowercase();
+        let mut input = input.split_whitespace();
+        let command = input.next().unwrap();
+        let arg = input.next().unwrap_or("");
 
-        match input.as_str() {
+        match command {
             "add" => {
                 let task = add_prompt();
                 task_list.add_task(task);
                 task_list.save_to_file(task::SAVE_FILE_PATH);
             }
-            "exit" | "quit" | "q" | "e" => {
+            "edit" | "e" => {
+                let task_id: usize =
+                if arg != "" { arg.parse().unwrap_or(0) }
+                else {
+                get_input!("Task ID: ", "").parse().unwrap_or(0)
+                };
+
+                if task_id > 0 && task_id <= task_list.tasks.len() {
+                    let task = edit_prompt(task_list.tasks[task_id - 1].clone());
+                    task_list.tasks[task_id - 1] = task;
+                    task_list.save_to_file(task::SAVE_FILE_PATH);
+                } else if task_id > task_list.tasks.len() {
+                    println!("Last id is {}!", task_list.tasks.len());
+                } else {
+                    println!("Task ID must be a positive number!");
+                }
+            }
+            "show" | "s" => {
+                task_list.print_tasks();
+            }
+            "exit" | "quit" | "q" => {
                 break;
             }
             _ => {
-                println!("Unknown command: {}", input);
+                println!("Unknown command: {}", command);
             }
         }
     }
