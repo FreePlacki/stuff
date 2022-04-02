@@ -10,6 +10,7 @@ use task::{Task, TaskList};
 
 fn main() {
     let mut task_list = TaskList::new();
+    task_list.load_from_file("saved_stuff.json");
 
     let mut task = Task::new(
         "Task 1".to_string(),
@@ -29,8 +30,8 @@ fn main() {
         1,
         Some(Local.ymd(2022, 4, 17).and_hms(0, 0, 0)),
     );
-    task_list.add_task(task);
-    task_list.add_task(task2);
+    // task_list.add_task(task);
+    // task_list.add_task(task2);
 
     task_list.tasks[0].print_task();
     task_list.save_to_file("saved_stuff.json");

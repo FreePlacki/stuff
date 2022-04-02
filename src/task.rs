@@ -3,7 +3,7 @@
 use crate::date::DateFormat;
 use chrono::Local;
 use serde::{Deserialize, Serialize};
-use std::io::Write;
+use std::io::{Read, Write};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct TaskJson {
@@ -18,11 +18,11 @@ struct TaskJson {
 impl TaskJson {
     fn new(task: &Task) -> Self {
         let due_date = if let Some(due_date) = task.due_date {
-            due_date.format("%Y-%m-%d %H:%M:%S").to_string()
+            due_date.to_string()
         } else {
             "None".to_string()
         };
-        let date_created = task.date_created.format("%Y-%m-%d %H:%M:%S").to_string();
+        let date_created = task.date_created.to_string();
 
         let mut sub_tasks = Vec::new();
         for t in task.sub_tasks.iter() {
@@ -160,6 +160,48 @@ impl TaskList {
         match file.write_all(json.as_bytes()) {
             Ok(_) => println!("Saved to file: {}", file_path),
             Err(e) => println!("Could not write to file: {}", e),
+        }
+    }
+
+    pub fn load_from_file(&mut self, file_path: &str) {
+        let mut file = match std::fs::File::open(file_path) {
+            Ok(file) => file,
+            Err(e) => {
+                println!("Could not open file: {}", e);
+                return;
+            }
+        };
+
+        let mut contents = String::new();
+        match file.read_to_string(&mut contents) {
+            Ok(_) => (),
+            Err(e) => {
+                println!("Could not read file: {}", e);
+                return;
+            }
+        }
+
+        let json: Vec<TaskJson> = match serde_json::from_str(&contents) {
+            Ok(json) => json,
+            Err(e) => {
+                println!("Could not parse file: {}", e);
+                return;
+            }
+        };
+
+        for t in json {
+            let mut task = Task::new(
+                t.title,
+                t.description,
+                t.importance,
+                if t.due_date == "None" {
+                    None
+                } else {
+                    Some(t.due_date.parse::<DateFormat>().unwrap())
+                },
+            );
+            task.date_created = t.due_date.parse::<DateFormat>().unwrap();
+            self.tasks.push(task);
         }
     }
 }
