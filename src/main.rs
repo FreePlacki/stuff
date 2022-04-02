@@ -6,8 +6,45 @@ mod date;
 
 use chrono::{Local, TimeZone};
 use date::DateFormat;
+use serde::{Deserialize, Serialize};
+use std::io::Write;
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize, Debug)]
+struct TaskJson {
+    title: String,
+    description: String,
+    importance: u8,
+    due_date: String,
+    date_created: String,
+    sub_tasks: Vec<TaskJson>,
+}
+
+impl TaskJson {
+    fn new(task: &Task) -> Self {
+        let due_date = if let Some(due_date) = task.due_date {
+            due_date.format("%Y-%m-%d %H:%M:%S").to_string()
+        } else {
+            "None".to_string()
+        };
+        let date_created = task.date_created.format("%Y-%m-%d %H:%M:%S").to_string();
+
+        let mut sub_tasks = Vec::new();
+        for t in task.sub_tasks.iter() {
+            sub_tasks.push(TaskJson::new(&t.clone()));
+        }
+
+        TaskJson {
+            title: task.title.clone(),
+            description: task.description.clone(),
+            importance: task.importance,
+            due_date,
+            date_created,
+            sub_tasks,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 struct Task {
     title: String,
     description: String,
@@ -87,7 +124,53 @@ impl Task {
     }
 }
 
+struct TaskList {
+    tasks: Vec<Task>,
+    json_tasks: Vec<TaskJson>,
+}
+
+impl TaskList {
+    fn new() -> TaskList {
+        TaskList {
+            tasks: Vec::new(),
+            json_tasks: Vec::new(),
+        }
+    }
+
+    fn add_task(&mut self, task: Task) {
+        self.tasks.push(task);
+    }
+
+    fn print_tasks(&self) {
+        for task in &self.tasks {
+            task.print_task();
+        }
+    }
+
+    fn save_to_file(&mut self, file_path: &str) {
+        let mut file = match std::fs::File::create(file_path) {
+            Ok(file) => file,
+            Err(e) => {
+                println!("Could not create file: {}", e);
+                return;
+            }
+        };
+
+        for t in self.tasks.iter() {
+            self.json_tasks.push(TaskJson::new(&t));
+        }
+        let json = serde_json::to_string(&self.json_tasks).unwrap();
+
+        match file.write_all(json.as_bytes()) {
+            Ok(_) => println!("Saved to file: {}", file_path),
+            Err(e) => println!("Could not write to file: {}", e),
+        }
+    }
+}
+
 fn main() {
+    let mut task_list = TaskList::new();
+
     let mut task = Task::new(
         "Task 1".to_string(),
         "This is a task".to_string(),
@@ -100,9 +183,15 @@ fn main() {
         2,
         Some(Local.ymd(2022, 4, 17).and_hms(0, 0, 0)),
     ));
+    let task2 = Task::new(
+        "Task 2".to_string(),
+        "This is a task".to_string(),
+        1,
+        Some(Local.ymd(2022, 4, 17).and_hms(0, 0, 0)),
+    );
+    task_list.add_task(task);
+    task_list.add_task(task2);
 
-    task.print_task();
-    println!();
-    task.print_info();
-    task.sub_tasks[0].print_info();
+    task_list.tasks[0].print_task();
+    task_list.save_to_file("test.json");
 }
