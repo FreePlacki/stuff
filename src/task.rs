@@ -81,12 +81,13 @@ impl Task {
         if let Some(due_date) = self.due_date {
             let time_left = crate::date::get_time_left(due_date);
 
-            println!("\t\x1b[1;37;30m [due in {}]\x1b[0m", time_left);
+            print!("\t\x1b[1;37;30m [due in {}]\x1b[0m", time_left);
         }
     }
 
     pub fn print_task(&self) {
         self.print_header();
+        println!();
 
         if self.description != "" {
             println!("{}", self.description);
@@ -100,7 +101,7 @@ impl Task {
         }
     }
 
-    fn print_info(&self) {
+    pub fn print_info(&self) {
         println!("\x1b[1;37;37mTitle:\x1b[0m {}", self.title);
         println!("\x1b[1;37;37mDescription:\x1b[0m {}", self.description);
         println!("\x1b[1;37;37mImportance:\x1b[0m {}", self.importance);
@@ -116,6 +117,7 @@ impl Task {
                 "None".to_string()
             }
         );
+        println!("\x1b[1;37;37mSub tasks:\x1b[0m {}", self.sub_tasks.len());
     }
 
     pub fn add_sub_task(&mut self, sub_task: Task) {
@@ -126,6 +128,7 @@ impl Task {
 pub struct TaskList {
     pub tasks: Vec<Task>,
     json_tasks: Vec<TaskJson>,
+    pub last_shown: Option<Task>,
 }
 
 impl TaskList {
@@ -133,6 +136,7 @@ impl TaskList {
         TaskList {
             tasks: Vec::new(),
             json_tasks: Vec::new(),
+            last_shown: None,
         }
     }
 
@@ -144,6 +148,7 @@ impl TaskList {
         for (i, task) in self.tasks.iter().enumerate() {
             print!("{}: ", i + 1);
             task.print_header();
+            println!();
         }
     }
 
@@ -204,7 +209,23 @@ impl TaskList {
                     Some(t.due_date.parse::<DateFormat>().unwrap())
                 },
             );
-            task.date_created = t.due_date.parse::<DateFormat>().unwrap();
+            task.date_created = t.date_created.parse::<DateFormat>().unwrap();
+
+            for sub_task in t.sub_tasks {
+                let mut s_task = Task::new(
+                    sub_task.title,
+                    sub_task.description,
+                    sub_task.importance,
+                    if sub_task.due_date == "None" {
+                        None
+                    } else {
+                        Some(sub_task.due_date.parse::<DateFormat>().unwrap())
+                    },
+                );
+                s_task.date_created = sub_task.date_created.parse::<DateFormat>().unwrap();
+                task.add_sub_task(s_task);
+            }
+
             self.tasks.push(task);
         }
     }
