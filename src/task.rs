@@ -5,6 +5,9 @@ use chrono::Local;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
+pub const IMPORTANCE_MAX: u8 = 3;
+pub const SAVE_FILE_PATH: &str = "saved_stuff.json";
+
 #[derive(Serialize, Deserialize, Debug)]
 struct TaskJson {
     title: String,
@@ -137,7 +140,7 @@ impl TaskList {
         self.tasks.push(task);
     }
 
-    fn print_tasks(&self) {
+    pub fn print_tasks(&self) {
         for task in &self.tasks {
             task.print_task();
         }
