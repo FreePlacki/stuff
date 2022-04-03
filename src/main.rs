@@ -60,12 +60,17 @@ fn add_prompt() -> Task {
             due = None;
             break;
         }
-        let inp = inp + " " + Local::now().offset().to_string().as_str();
+        let parsed_date = date::date_from_time(inp.as_str());
+        if let Ok(date) = parsed_date {
+            due = Some(date);
+            break;
+        }
 
-        // TODO support other formats
+        let inp = inp + ":00 " + Local::now().offset().to_string().as_str();
+
         let mut invalid_date = false;
         due = Some(inp.parse().unwrap_or_else(|_| {
-            println!("Invalid date! (use format: YYYY-MM-DD HH:MM:SS)");
+            println!("Invalid date! (use format: YYYY-MM-DD HH:MM or Xw Xd Xh Xm)");
             invalid_date = true;
             Local::now()
         }));
