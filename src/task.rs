@@ -29,7 +29,7 @@ impl TaskJson {
 
         let mut sub_tasks = Vec::new();
         for t in task.sub_tasks.iter() {
-            sub_tasks.push(TaskJson::new(&t.clone()));
+            sub_tasks.push(TaskJson::new(&t));
         }
 
         TaskJson {
@@ -161,14 +161,14 @@ impl TaskList {
             }
         };
 
+        self.json_tasks.clear();
         for t in self.tasks.iter() {
             self.json_tasks.push(TaskJson::new(&t));
         }
         let json = serde_json::to_string(&self.json_tasks).unwrap();
 
-        match file.write_all(json.as_bytes()) {
-            Ok(_) => {},
-            Err(e) => println!("Could not write to file: {}", e),
+        if let Err(e) = file.write_all(json.as_bytes()) {
+            println!("Could not write to file: {}", e);
         }
     }
 
@@ -182,12 +182,13 @@ impl TaskList {
         };
 
         let mut contents = String::new();
-        match file.read_to_string(&mut contents) {
-            Ok(_) => (),
-            Err(e) => {
-                println!("Could not read file: {}", e);
-                return;
-            }
+        if let Err(e) = file.read_to_string(&mut contents) {
+            println!("Could not read file: {}", e);
+            return;
+        }
+        if contents.is_empty() {
+            println!("You have no tasks.");
+            return;
         }
 
         let json: Vec<TaskJson> = match serde_json::from_str(&contents) {

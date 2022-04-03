@@ -82,7 +82,7 @@ fn add_prompt() -> Task {
     task
 }
 
-fn edit_prompt(task: Task) -> Task {
+fn edit_prompt(task: &Task) -> Task {
     let mut edited_task = Task::new("".to_string(), "".to_string(), 0, None);
     println!(
         "Editing task: {}\n(Press enter to leave unchanged)",
@@ -93,7 +93,7 @@ fn edit_prompt(task: Task) -> Task {
         edited_task.title = title;
     }
 
-    let description = get_input!("Description: ", task.description.clone());
+    let description = get_input!("Description: ", task.description);
     edited_task.description = description;
 
     let mut importance: u8;
@@ -141,7 +141,7 @@ fn run_prompt(task_list: &mut TaskList) {
     loop {
         let input = get_input!("\n> ", "").to_lowercase();
         let mut input = input.split_whitespace();
-        let command = input.next().unwrap();
+        let command = input.next().unwrap_or("");
         let arg = input.next().unwrap_or("");
 
         match command {
@@ -150,11 +150,12 @@ fn run_prompt(task_list: &mut TaskList) {
                     let task = add_prompt();
                     task_list.add_task(task);
                 } else {
-                    let task = add_prompt();
                     let task_ind: usize = arg.parse().unwrap_or(0);
                     if task_ind < 1 || task_ind > task_list.tasks.len() {
                         println!("Task index must be a number between 1 and {}!", task_list.tasks.len());
+                        continue;
                     }
+                    let task = add_prompt();
                     task_list.tasks[task_ind - 1].add_sub_task(task);
                 }
                 task_list.save_to_file(task::SAVE_FILE_PATH);
@@ -167,7 +168,7 @@ fn run_prompt(task_list: &mut TaskList) {
                 };
 
                 if task_id > 0 && task_id <= task_list.tasks.len() {
-                    let task = edit_prompt(task_list.tasks[task_id - 1].clone());
+                    let task = edit_prompt(&task_list.tasks[task_id - 1]);
                     task_list.tasks[task_id - 1] = task;
                     task_list.save_to_file(task::SAVE_FILE_PATH);
                 } else if task_id > task_list.tasks.len() {
@@ -214,8 +215,24 @@ fn run_prompt(task_list: &mut TaskList) {
                     println!("Task ID must be a positive number!");
                 }
             }
+            "remove" | "r" => {
+                let ind = arg.parse().unwrap_or(0);
+                if ind > 0 && ind <= task_list.tasks.len() {
+                    task_list.tasks.remove(ind - 1);
+                    task_list.save_to_file(task::SAVE_FILE_PATH);
+                    // task_list.tasks.clear();
+                    // task_list.load_from_file(task::SAVE_FILE_PATH);
+                } else if ind > task_list.tasks.len() {
+                    println!("Last id is {}!", task_list.tasks.len());
+                } else {
+                    println!("Task ID must be a positive number!");
+                }
+            }
             "exit" | "quit" | "q" => {
                 break;
+            }
+            "" => {
+                continue;
             }
             _ => {
                 println!("Unknown command: {}", command);
