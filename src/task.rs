@@ -1,7 +1,7 @@
 //! A module for storing and displaying task data.
 
 use crate::date::DateFormat;
-use chrono::Local;
+use chrono::{Local, Duration};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
@@ -77,7 +77,7 @@ impl Task {
         }
     }
 
-    fn print_header(&self) {
+    pub fn print_header(&self) {
         match self.importance {
             3 => print!("\x1b[1;37;31m{}\x1b[0m", self.title),
             2 => print!("\x1b[1;37;33m{}\x1b[0m", self.title),
@@ -169,9 +169,41 @@ impl TaskList {
             return None;
         }
 
+        Some(Self::get_random(&self.tasks))
+    }
+
+    pub fn get_random(task_list: &Vec<Task>) -> Task {
         let mut rng = rand::thread_rng();
-        let index = rng.gen_range(0..self.tasks.len());
-        Some(self.tasks[index].clone())
+        let index = rng.gen_range(0..task_list.len());
+        task_list[index].clone()
+    }
+
+    pub fn sorted_by_priority(&self) -> Vec<Task> {
+        let mut tasks = self.tasks.clone();
+        tasks.sort_by(|a, b| b.importance.cmp(&a.importance));
+        tasks
+    }
+
+    pub fn sorted_by_due(&self) -> Vec<Task> {
+        let mut tasks = self.tasks.clone();
+        // we add 99999 weeks so that the tasks that don't have a due date are at the end
+        tasks.sort_by(
+            |a, b|
+            a.due_date.unwrap_or(Local::now() + Duration::weeks(99999)).cmp(
+                &b.due_date.unwrap_or(Local::now() + Duration::weeks(99999))
+            )
+        );
+        tasks
+    }
+
+    pub fn get_by_priority(&self, priority: u8) -> Vec<Task> {
+        let mut tasks = Vec::new();
+        for task in self.tasks.iter() {
+            if task.importance == priority {
+                tasks.push(task.clone());
+            }
+        }
+        tasks
     }
 
     pub fn print_tasks(&self) {

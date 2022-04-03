@@ -268,7 +268,33 @@ fn main() {
         }
         2 => match args[1].as_str() {
             "show" | "s" => {
-                task_list.print_tasks();
+                if task_list.tasks.is_empty() {
+                    println!("You have no tasks!");
+                    return;
+                }
+
+                if args.len() > 2 && args[2] == "all" {
+                    task_list.print_tasks();
+                    return;
+                }
+
+                let max_priority = task_list.sorted_by_priority();
+                let tasks = task_list.get_by_priority(max_priority[0].importance);
+                let task = TaskList::get_random(&tasks);
+                println!("\x1b[1;4;37mHigh priority\x1b[0m:");
+                task.print_header();
+                println!("\n");
+
+                let least_due = task_list.sorted_by_due();
+                let task = &least_due[0];
+                println!("\x1b[1;4;37mUrgent\x1b[0m:");
+                task.print_header();
+                println!("\n");
+
+                let task = task_list.random_task().unwrap();
+                println!("\x1b[1;4;37mRandom\x1b[0m:");
+                task.print_header();
+                println!("\n");
             }
             "add" | "a" => {
                 let task = add_prompt();
