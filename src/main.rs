@@ -38,6 +38,11 @@ fn add_prompt() -> Task {
     }
 
     let description = get_input!("Description: ", "");
+    let description = if description == "" {
+        None
+    } else {
+        Some(description)
+    };
 
     let mut importance: u8;
     loop {
@@ -83,7 +88,7 @@ fn add_prompt() -> Task {
 }
 
 fn edit_prompt(task: &Task) -> Task {
-    let mut edited_task = Task::new("".to_string(), "".to_string(), 0, None);
+    let mut edited_task = Task::new("".to_string(), None, 0, None);
     println!(
         "Editing task: {}\n(Press enter to leave unchanged)",
         task.title
@@ -93,7 +98,12 @@ fn edit_prompt(task: &Task) -> Task {
         edited_task.title = title;
     }
 
-    let description = get_input!("Description: ", task.description);
+    let description = get_input!("Description: ", "");
+    let description = if description == "" {
+        task.description.clone()
+    } else {
+        Some(description)
+    };
     edited_task.description = description;
 
     let mut importance: u8;

@@ -20,6 +20,12 @@ struct TaskJson {
 
 impl TaskJson {
     fn new(task: &Task) -> Self {
+        let description = if let Some(desc) = task.description.clone() {
+            desc.to_string()
+        } else {
+            "None".to_string()
+        };
+
         let due_date = if let Some(due_date) = task.due_date {
             due_date.to_string()
         } else {
@@ -34,7 +40,7 @@ impl TaskJson {
 
         TaskJson {
             title: task.title.clone(),
-            description: task.description.clone(),
+            description: description,
             importance: task.importance,
             due_date,
             date_created,
@@ -46,7 +52,7 @@ impl TaskJson {
 #[derive(Debug, Clone)]
 pub struct Task {
     pub title: String,
-    pub description: String,
+    pub description: Option<String>,
     pub importance: u8,
     pub due_date: Option<DateFormat>,
     pub date_created: DateFormat,
@@ -56,7 +62,7 @@ pub struct Task {
 impl Task {
     pub fn new(
         title: String,
-        description: String,
+        description: Option<String>,
         importance: u8,
         due_date: Option<DateFormat>,
     ) -> Task {
@@ -81,7 +87,15 @@ impl Task {
         if let Some(due_date) = self.due_date {
             let time_left = crate::date::get_time_left(due_date);
 
-            print!("\t\x1b[1;37;30m [due in {}]\x1b[0m", time_left);
+            print!("\t");
+            if due_date - Local::now() < chrono::Duration::days(1) {
+                print!("\x1b[1;37;31m");
+            } else if due_date - Local::now() < chrono::Duration::weeks(1) {
+                print!("\x1b[1;37;36m");
+            } else {
+                print!("\x1b[1;37;37m");
+            }
+            print!("[due in {}]\x1b[0m", time_left);
         }
     }
 
@@ -89,8 +103,8 @@ impl Task {
         self.print_header();
         println!();
 
-        if self.description != "" {
-            println!("{}", self.description);
+        if let Some(desc) = &self.description {
+            println!("{}", desc);
         }
 
         if !self.sub_tasks.is_empty() {
@@ -103,7 +117,12 @@ impl Task {
 
     pub fn print_info(&self) {
         println!("\x1b[1;37;37mTitle:\x1b[0m {}", self.title);
-        println!("\x1b[1;37;37mDescription:\x1b[0m {}", self.description);
+        let desc = if let Some(desc) = self.description.clone() {
+            desc
+        } else {
+            String::from("None")
+        };
+        println!("\x1b[1;37;37mDescription:\x1b[0m {}", desc);
         println!("\x1b[1;37;37mImportance:\x1b[0m {}", self.importance);
         println!(
             "\x1b[1;37;37mDate created:\x1b[0m {}",
@@ -216,7 +235,11 @@ impl TaskList {
         for t in json {
             let mut task = Task::new(
                 t.title,
-                t.description,
+                if t.description == "None" {
+                    None
+                } else {
+                    Some(t.description)
+                },
                 t.importance,
                 if t.due_date == "None" {
                     None
@@ -229,7 +252,11 @@ impl TaskList {
             for sub_task in t.sub_tasks {
                 let mut s_task = Task::new(
                     sub_task.title,
-                    sub_task.description,
+                    if sub_task.description == "None" {
+                        None
+                    } else {
+                        Some(sub_task.description)
+                    },
                     sub_task.importance,
                     if sub_task.due_date == "None" {
                         None
