@@ -2,6 +2,7 @@
 
 use crate::date::DateFormat;
 use chrono::Local;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 
@@ -161,6 +162,16 @@ impl TaskList {
 
     pub fn add_task(&mut self, task: Task) {
         self.tasks.push(task);
+    }
+
+    pub fn random_task(&self) -> Option<Task> {
+        if self.tasks.is_empty() {
+            return None;
+        }
+
+        let mut rng = rand::thread_rng();
+        let index = rng.gen_range(0..self.tasks.len());
+        Some(self.tasks[index].clone())
     }
 
     pub fn print_tasks(&self) {

@@ -266,17 +266,27 @@ fn main() {
             task_list.print_tasks();
             run_prompt(&mut task_list);
         }
-        2 => {
-            if args[1] == "show" {
+        2 => match args[1].as_str() {
+            "show" | "s" => {
                 task_list.print_tasks();
-            } else if args[1] == "add" {
+            }
+            "add" | "a" => {
                 let task = add_prompt();
                 task_list.add_task(task);
                 task_list.save_to_file(task::SAVE_FILE_PATH);
-            } else {
+            }
+            "random" | "rand" | "r" => {
+                if let Some(task) = task_list.random_task() {
+                    println!("Random Task:");
+                    task.print_task();
+                } else {
+                    println!("You have no tasks!");
+                }
+            }
+            _ => {
                 println!("Unknown command: {}", args[1]);
             }
-        }
+        },
         _ => {
             println!("Usage: {} [option]", args[0]);
         }
