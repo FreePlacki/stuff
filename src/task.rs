@@ -219,7 +219,7 @@ impl TaskList {
             println!("Could not read file: {}", e);
             return;
         }
-        if contents.is_empty() {
+        if contents.is_empty() || contents == "[]" {
             println!("You have no tasks.");
             return;
         }
