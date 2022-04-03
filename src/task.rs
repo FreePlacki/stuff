@@ -176,8 +176,22 @@ impl TaskList {
         let mut file = match std::fs::File::open(file_path) {
             Ok(file) => file,
             Err(e) => {
-                println!("Could not open file: {}", e);
-                return;
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    if let Ok(_) = std::fs::File::create(file_path) {
+                        if let Ok(f) = std::fs::File::open(file_path) {
+                            f
+                        } else {
+                            println!("Could open created file: {}", e);
+                            return;
+                        }
+                    } else {
+                        println!("Could not create file: {}", e);
+                        return;
+                    }
+                } else {
+                    println!("Could not open file: {}", e);
+                    return;
+                }
             }
         };
 

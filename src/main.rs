@@ -220,8 +220,6 @@ fn run_prompt(task_list: &mut TaskList) {
                 if ind > 0 && ind <= task_list.tasks.len() {
                     task_list.tasks.remove(ind - 1);
                     task_list.save_to_file(task::SAVE_FILE_PATH);
-                    // task_list.tasks.clear();
-                    // task_list.load_from_file(task::SAVE_FILE_PATH);
                 } else if ind > task_list.tasks.len() {
                     println!("Last id is {}!", task_list.tasks.len());
                 } else {
