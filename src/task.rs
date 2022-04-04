@@ -1,7 +1,7 @@
 //! A module for storing and displaying task data.
 
 use crate::date::DateFormat;
-use chrono::{Local, Duration};
+use chrono::{Duration, Local};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
@@ -178,7 +178,7 @@ impl TaskList {
         task_list[index].clone()
     }
 
-    pub fn sorted_by_priority(&self) -> Vec<Task> {
+    pub fn sorted_by_importance(&self) -> Vec<Task> {
         let mut tasks = self.tasks.clone();
         tasks.sort_by(|a, b| b.importance.cmp(&a.importance));
         tasks
@@ -187,19 +187,31 @@ impl TaskList {
     pub fn sorted_by_due(&self) -> Vec<Task> {
         let mut tasks = self.tasks.clone();
         // we add 99999 weeks so that the tasks that don't have a due date are at the end
-        tasks.sort_by(
-            |a, b|
-            a.due_date.unwrap_or(Local::now() + Duration::weeks(99999)).cmp(
-                &b.due_date.unwrap_or(Local::now() + Duration::weeks(99999))
-            )
-        );
+        tasks.sort_by(|a, b| {
+            a.due_date
+                .unwrap_or(Local::now() + Duration::weeks(99999))
+                .cmp(&b.due_date.unwrap_or(Local::now() + Duration::weeks(99999)))
+        });
         tasks
     }
 
-    pub fn get_by_priority(&self, priority: u8) -> Vec<Task> {
+    pub fn sort_by_date_created(&mut self) {
+        self.tasks
+            .sort_by(|a, b| a.date_created.cmp(&b.date_created));
+    }
+
+    pub fn sort_by_due(&mut self) {
+        self.tasks = self.sorted_by_due();
+    }
+
+    pub fn sort_by_importance(&mut self) {
+        self.tasks = self.sorted_by_importance();
+    }
+
+    pub fn get_by_importance(&self, importance: u8) -> Vec<Task> {
         let mut tasks = Vec::new();
         for task in self.tasks.iter() {
-            if task.importance == priority {
+            if task.importance == importance {
                 tasks.push(task.clone());
             }
         }
@@ -263,7 +275,7 @@ impl TaskList {
             return;
         }
         if contents.is_empty() || contents == "[]" {
-            println!("You have no tasks.");
+            println!("You have no tasks!");
             return;
         }
 

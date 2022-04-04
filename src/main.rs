@@ -195,6 +195,10 @@ fn run_prompt(task_list: &mut TaskList) {
                 }
             }
             "show" | "s" => {
+                if task_list.tasks.is_empty() {
+                    println!("No tasks to show!");
+                    continue;
+                }
                 if arg != "" {
                     let ind = arg.parse().unwrap_or(0);
                     if let Some(task) = &task_list.last_shown {
@@ -243,7 +247,36 @@ fn run_prompt(task_list: &mut TaskList) {
                     println!("Task ID must be a positive number!");
                 }
             }
+            "sort" => {
+                if arg == "" {
+                    task_list.sort_by_date_created();
+                    println!("Sorted by date created.");
+                    task_list.print_tasks();
+                } else {
+                    match arg {
+                        "due" | "d" => {
+                            task_list.sort_by_due();
+                            println!("Sorted by due date.");
+                        }
+                        "importance" | "i" => {
+                            task_list.sort_by_importance();
+                            println!("Sorted by importance.");
+                        }
+                        "created" | "c" => {
+                            task_list.sort_by_date_created();
+                            println!("Sorted by date created.");
+                        }
+                        _ => {
+                            println!("Invalid sort type!");
+                            continue;
+                        }
+                    }
+                    task_list.print_tasks();
+                    task_list.save_to_file(task::SAVE_FILE_PATH);
+                }
+            }
             "exit" | "quit" | "q" => {
+                println!("Good luck with your tasks!");
                 break;
             }
             "" => {
@@ -269,7 +302,6 @@ fn main() {
         2 => match args[1].as_str() {
             "show" | "s" => {
                 if task_list.tasks.is_empty() {
-                    println!("You have no tasks!");
                     return;
                 }
 
@@ -278,8 +310,8 @@ fn main() {
                     return;
                 }
 
-                let max_priority = task_list.sorted_by_priority();
-                let tasks = task_list.get_by_priority(max_priority[0].importance);
+                let max_priority = task_list.sorted_by_importance();
+                let tasks = task_list.get_by_importance(max_priority[0].importance);
                 let task = TaskList::get_random(&tasks);
                 println!("\x1b[1;4;37mHigh priority\x1b[0m:");
                 task.print_header();

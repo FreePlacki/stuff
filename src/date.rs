@@ -49,7 +49,6 @@ pub fn date_from_time(time: &str) -> Result<DateFormat, &str> {
     Ok(total_time)
 }
 
-
 #[cfg(test)]
 mod tests {
     use chrono::Duration;
@@ -58,17 +57,21 @@ mod tests {
 
     #[test]
     fn test_get_time_left() {
-        let date = Local::now() + Duration::weeks(2) + Duration::milliseconds(1);
+        let date = Local::now() + Duration::weeks(2) + Duration::milliseconds(10);
         assert_eq!(get_time_left(date), "2w");
 
-        let date = Local::now() + Duration::seconds(2) + Duration::milliseconds(1);
+        let date = Local::now() + Duration::seconds(2) + Duration::milliseconds(10);
         assert_eq!(get_time_left(date), "2s");
 
         let date = Local::now();
         assert_eq!(get_time_left(date), "0s", "No time left should return 0s");
 
-        let date = Local::now() - (Duration::days(2) + Duration::milliseconds(1));
-        assert_eq!(get_time_left(date), "-2d", "Negative time should be formatted correctly");
+        let date = Local::now() - (Duration::days(2) + Duration::milliseconds(10));
+        assert_eq!(
+            get_time_left(date),
+            "-2d",
+            "Negative time should be formatted correctly"
+        );
     }
 
     #[test]
@@ -76,18 +79,36 @@ mod tests {
         macro_rules! test_date {
             ($time:expr, $duration:expr, $message:expr) => {
                 let diff = Local::now() + $duration - date_from_time($time).unwrap();
-                assert!(diff < Duration::milliseconds(1) && diff > Duration::milliseconds(-1), $message);
-            }
+                assert!(
+                    diff < Duration::milliseconds(1) && diff > Duration::milliseconds(-1),
+                    $message
+                );
+            };
         }
 
+        test_date!(
+            "2d",
+            Duration::days(2),
+            "Parsing with one value should work"
+        );
 
-        test_date!("2d", Duration::days(2), "Parsing with one value should work");
+        test_date!(
+            "2d 1h 5s",
+            Duration::days(2) + Duration::hours(1) + Duration::seconds(5),
+            "Parsing with multiple values should work"
+        );
 
-        test_date!("2d 1h 5s", Duration::days(2) + Duration::hours(1) + Duration::seconds(5), "Parsing with multiple values should work");
+        test_date!(
+            "2h 5w 10s",
+            Duration::hours(2) + Duration::weeks(5) + Duration::seconds(10),
+            "Parsing with multiple values in random order should work"
+        );
 
-        test_date!("2h 5w 10s", Duration::hours(2) + Duration::weeks(5) + Duration::seconds(10), "Parsing with multiple values in random order should work");
-
-        test_date!("3d -5w 23m", Duration::days(3) - Duration::weeks(5) + Duration::minutes(23), "Parsing with negative values should work");
+        test_date!(
+            "3d -5w 23m",
+            Duration::days(3) - Duration::weeks(5) + Duration::minutes(23),
+            "Parsing with negative values should work"
+        );
 
         let time_str = "2dw 3";
         assert_eq!(
