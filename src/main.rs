@@ -2,6 +2,7 @@
 //! The tasks are printed nicely, in color to the terminal.
 //! Tasks can contain sub tasks.
 //! You can save the tasks to a file.
+mod commands;
 mod date;
 mod task;
 
@@ -157,6 +158,16 @@ fn run_prompt(task_list: &mut TaskList) {
         let mut input = input.split_whitespace();
         let command = input.next().unwrap_or("");
         let arg = input.next().unwrap_or("");
+
+        let command_list = commands::Commands::new();
+        for c in command_list {
+            if c.keywords().contains(&command) {
+                c.execute(arg).unwrap();
+            }
+        }
+
+
+
 
         match command {
             "add" | "a" => {
