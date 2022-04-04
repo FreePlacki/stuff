@@ -175,7 +175,7 @@ fn run_prompt(task_list: &mut TaskList) {
                     let task = add_prompt();
                     task_list.tasks[task_ind - 1].add_sub_task(task);
                 }
-                task_list.save_to_file(task::SAVE_FILE_PATH);
+                task_list.save_to_file();
             }
             "edit" | "e" => {
                 let task_id: usize = if arg != "" {
@@ -187,7 +187,7 @@ fn run_prompt(task_list: &mut TaskList) {
                 if task_id > 0 && task_id <= task_list.tasks.len() {
                     let task = edit_prompt(&task_list.tasks[task_id - 1]);
                     task_list.tasks[task_id - 1] = task;
-                    task_list.save_to_file(task::SAVE_FILE_PATH);
+                    task_list.save_to_file();
                 } else if task_id > task_list.tasks.len() {
                     println!("Last id is {}!", task_list.tasks.len());
                 } else {
@@ -240,7 +240,7 @@ fn run_prompt(task_list: &mut TaskList) {
                 let ind = arg.parse().unwrap_or(0);
                 if ind > 0 && ind <= task_list.tasks.len() {
                     task_list.tasks.remove(ind - 1);
-                    task_list.save_to_file(task::SAVE_FILE_PATH);
+                    task_list.save_to_file();
                 } else if ind > task_list.tasks.len() {
                     println!("Last id is {}!", task_list.tasks.len());
                 } else {
@@ -272,7 +272,7 @@ fn run_prompt(task_list: &mut TaskList) {
                         }
                     }
                     task_list.print_tasks();
-                    task_list.save_to_file(task::SAVE_FILE_PATH);
+                    task_list.save_to_file();
                 }
             }
             "exit" | "quit" | "q" => {
@@ -291,7 +291,7 @@ fn run_prompt(task_list: &mut TaskList) {
 
 fn main() {
     let mut task_list = TaskList::new();
-    task_list.load_from_file(task::SAVE_FILE_PATH);
+    task_list.load_from_file();
 
     let args = std::env::args().collect::<Vec<String>>();
     match args.len() {
@@ -331,7 +331,7 @@ fn main() {
             "add" | "a" => {
                 let task = add_prompt();
                 task_list.add_task(task);
-                task_list.save_to_file(task::SAVE_FILE_PATH);
+                task_list.save_to_file();
             }
             "random" | "rand" | "r" => {
                 if let Some(task) = task_list.random_task() {

@@ -4,10 +4,10 @@ use crate::date::DateFormat;
 use chrono::{Duration, Local};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::io::{Read, Write};
+use std::{io::{Read, Write}, path::PathBuf};
 
 pub const IMPORTANCE_MAX: u8 = 3;
-pub const SAVE_FILE_PATH: &str = "saved_stuff.json";
+pub const SAVE_FILE_NAME: &str = "saved_stuff.json";
 
 #[derive(Serialize, Deserialize, Debug)]
 struct TaskJson {
@@ -226,8 +226,22 @@ impl TaskList {
         }
     }
 
-    pub fn save_to_file(&mut self, file_path: &str) {
-        let mut file = match std::fs::File::create(file_path) {
+    fn get_save_file_path() -> Result<PathBuf, std::io::Error> {
+        let mut file_path = std::env::current_exe()?;
+        file_path.pop();
+        file_path.push(SAVE_FILE_NAME);
+        Ok(file_path)
+    }
+
+    pub fn save_to_file(&mut self) {
+        let file_path = if let Ok(path) = Self::get_save_file_path() {
+            path
+        } else {
+            println!("Couldn't get save file path");
+            return;
+        };
+
+        let mut file = match std::fs::File::create(&file_path) {
             Ok(file) => file,
             Err(e) => {
                 println!("Could not create file: {}", e);
@@ -246,13 +260,19 @@ impl TaskList {
         }
     }
 
-    pub fn load_from_file(&mut self, file_path: &str) {
-        let mut file = match std::fs::File::open(file_path) {
+    pub fn load_from_file(&mut self) {
+        let file_path = if let Ok(path) = Self::get_save_file_path() {
+            path
+        } else {
+            println!("Couldn't get save file path");
+            return;
+        };
+        let mut file = match std::fs::File::open(&file_path) {
             Ok(file) => file,
             Err(e) => {
                 if e.kind() == std::io::ErrorKind::NotFound {
-                    if let Ok(_) = std::fs::File::create(file_path) {
-                        if let Ok(f) = std::fs::File::open(file_path) {
+                    if let Ok(_) = std::fs::File::create(&file_path) {
+                        if let Ok(f) = std::fs::File::open(&file_path) {
                             f
                         } else {
                             println!("Could open created file: {}", e);
