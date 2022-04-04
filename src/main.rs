@@ -161,6 +161,13 @@ fn run_prompt(task_list: &mut TaskList) {
         match command {
             "add" | "a" => {
                 if arg == "" {
+                    if task_list.last_shown.is_some() {
+                        let last_task = &mut task_list.tasks[task_list.last_shown.unwrap() - 1];
+                        println!("Adding sub-task to: {}", last_task.title);
+                        last_task.add_sub_task(add_prompt());
+                        task_list.save_to_file();
+                        continue;
+                    }
                     let task = add_prompt();
                     task_list.add_task(task);
                 } else {
@@ -201,7 +208,8 @@ fn run_prompt(task_list: &mut TaskList) {
                 }
                 if arg != "" {
                     let ind = arg.parse().unwrap_or(0);
-                    if let Some(task) = &task_list.last_shown {
+                    if let Some(last_shown) = task_list.last_shown {
+                        let task = &task_list.tasks[last_shown - 1];
                         if ind > 0 && ind <= task.sub_tasks.len() {
                             task.sub_tasks[ind - 1].print_task();
                         } else if ind > task.sub_tasks.len() {
@@ -214,7 +222,7 @@ fn run_prompt(task_list: &mut TaskList) {
 
                     if ind > 0 && ind <= task_list.tasks.len() {
                         task_list.tasks[ind - 1].print_task();
-                        task_list.last_shown = Some(task_list.tasks[ind - 1].clone());
+                        task_list.last_shown = Some(ind);
                     } else if ind > task_list.tasks.len() {
                         println!("Last id is {}!", task_list.tasks.len());
                     } else {
@@ -229,7 +237,7 @@ fn run_prompt(task_list: &mut TaskList) {
                 let ind = arg.parse().unwrap_or(0);
                 if ind > 0 && ind <= task_list.tasks.len() {
                     task_list.tasks[ind - 1].print_info();
-                    task_list.last_shown = Some(task_list.tasks[ind - 1].clone());
+                    task_list.last_shown = Some(ind);
                 } else if ind > task_list.tasks.len() {
                     println!("Last id is {}!", task_list.tasks.len());
                 } else {

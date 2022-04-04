@@ -110,8 +110,10 @@ impl Task {
 
         if !self.sub_tasks.is_empty() {
             println!("\x1b[1;37;37mSub tasks ({}):\x1b[0m", self.sub_tasks.len());
-            for task in &self.sub_tasks {
+            for (i, task) in self.sub_tasks.iter().enumerate() {
+                print!("{}: ", i + 1);
                 task.print_header();
+                println!();
             }
         }
     }
@@ -148,7 +150,7 @@ impl Task {
 pub struct TaskList {
     pub tasks: Vec<Task>,
     json_tasks: Vec<TaskJson>,
-    pub last_shown: Option<Task>,
+    pub last_shown: Option<usize>,
 }
 
 impl TaskList {
