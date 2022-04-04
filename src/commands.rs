@@ -21,7 +21,6 @@ impl Command for AddCommand {
                 let last_task = &mut task_list.tasks[task_list.last_shown.unwrap() - 1];
                 println!("Adding sub-task to: {}", last_task.title);
                 last_task.add_sub_task(add_prompt());
-                task_list.save_to_file();
                 return Ok(());
             }
             let task = add_prompt();
@@ -29,16 +28,14 @@ impl Command for AddCommand {
         } else {
             let task_ind: usize = arg.parse().unwrap_or(0);
             if task_ind < 1 || task_ind > task_list.tasks.len() {
-                println!(
+                return Err(format!(
                     "Task index must be a number between 1 and {}!",
                     task_list.tasks.len()
-                );
-                return Ok(());
+                ));
             }
             let task = add_prompt();
             task_list.tasks[task_ind - 1].add_sub_task(task);
         }
-        task_list.save_to_file();
 
         Ok(())
     }
@@ -64,11 +61,10 @@ impl Command for EditCommand {
         if task_id > 0 && task_id <= task_list.tasks.len() {
             let task = edit_prompt(&task_list.tasks[task_id - 1]);
             task_list.tasks[task_id - 1] = task;
-            task_list.save_to_file();
         } else if task_id > task_list.tasks.len() {
-            println!("Last id is {}!", task_list.tasks.len());
+            return Err(format!("Last id is {}!", task_list.tasks.len()));
         } else {
-            println!("Task ID must be a positive number!");
+            return Err("Task ID must be a positive number!".into());
         }
 
         Ok(())
@@ -87,36 +83,36 @@ impl Command for ShowCommand {
 
     fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
         if task_list.tasks.is_empty() {
-            println!("No tasks to show!");
-            return Ok(());
+            return Err("No tasks to show!".into());
         }
         if arg != "" {
             let ind = arg.parse().unwrap_or(0);
             if let Some(last_shown) = task_list.last_shown {
                 let task = &task_list.tasks[last_shown - 1];
-                if ind > 0 && ind <= task.sub_tasks.len() {
+                return if ind > 0 && ind <= task.sub_tasks.len() {
                     task.sub_tasks[ind - 1].print_task();
+                    Ok(())
                 } else if ind > task.sub_tasks.len() {
-                    println!("Last id is {}!", task.sub_tasks.len());
+                    Err(format!("Last id is {}!", task.sub_tasks.len()))
                 } else {
-                    println!("Task ID must be a positive number!");
-                }
-                return Ok(());
+                    Err("Task ID must be a positive number!".into())
+                };
             }
 
-            if ind > 0 && ind <= task_list.tasks.len() {
+            return if ind > 0 && ind <= task_list.tasks.len() {
                 task_list.tasks[ind - 1].print_task();
                 task_list.last_shown = Some(ind);
+                Ok(())
             } else if ind > task_list.tasks.len() {
-                println!("Last id is {}!", task_list.tasks.len());
+                Err(format!("Last id is {}!", task_list.tasks.len()))
             } else {
-                println!("Task ID must be a positive number!");
+                Err("Task ID must be a positive number!".into())
             }
         } else {
             task_list.last_shown = None;
             task_list.print_tasks();
+            return Ok(());
         }
-        Ok(())
     }
 
     fn help(&self) -> &str {
@@ -132,15 +128,15 @@ impl Command for InfoCommand {
 
     fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
         let ind = arg.parse().unwrap_or(0);
-        if ind > 0 && ind <= task_list.tasks.len() {
+        return if ind > 0 && ind <= task_list.tasks.len() {
             task_list.tasks[ind - 1].print_info();
             task_list.last_shown = Some(ind);
+            Ok(())
         } else if ind > task_list.tasks.len() {
-            println!("Last id is {}!", task_list.tasks.len());
+            Err(format!("Last id is {}!", task_list.tasks.len()))
         } else {
-            println!("Task ID must be a positive number!");
-        }
-        Ok(())
+            Err("Task ID must be a positive number!".into())
+        };
     }
 
     fn help(&self) -> &str {
@@ -156,15 +152,14 @@ impl Command for RemoveCommand {
 
     fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
         let ind = arg.parse().unwrap_or(0);
-        if ind > 0 && ind <= task_list.tasks.len() {
+        return if ind > 0 && ind <= task_list.tasks.len() {
             task_list.tasks.remove(ind - 1);
-            task_list.save_to_file();
+            Ok(())
         } else if ind > task_list.tasks.len() {
-            println!("Last id is {}!", task_list.tasks.len());
+            Err(format!("Last id is {}!", task_list.tasks.len()))
         } else {
-            println!("Task ID must be a positive number!");
-        }
-        Ok(())
+            Err("Task ID must be a positive number!".into())
+        };
     }
 
     fn help(&self) -> &str {
@@ -175,7 +170,7 @@ impl Command for RemoveCommand {
 struct SortCommand;
 impl Command for SortCommand {
     fn keywords(&self) -> &[&str] {
-        &["sort", "s"]
+        &["sort"]
     }
 
     fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
@@ -183,6 +178,7 @@ impl Command for SortCommand {
             task_list.sort_by_date_created();
             println!("Sorted by date created.");
             task_list.print_tasks();
+            Ok(())
         } else {
             match arg {
                 "due" | "d" => {
@@ -198,14 +194,12 @@ impl Command for SortCommand {
                     println!("Sorted by date created.");
                 }
                 _ => {
-                    println!("Invalid sort type!");
-                    return Ok(());
+                    return Err("Invalid sort type!".into());
                 }
             }
             task_list.print_tasks();
-            task_list.save_to_file();
+            Ok(())
         }
-        Ok(())
     }
 
     fn help(&self) -> &str {
@@ -225,7 +219,7 @@ impl Command for QuitCommand {
     }
 
     fn help(&self) -> &str {
-        "Exits the program."
+        "quit - Exits the program."
     }
 }
 
@@ -236,12 +230,13 @@ pub struct Commands {
 impl Commands {
     pub fn new() -> Self {
         let commands: Vec<Box<dyn Command>> = vec![
-            Box::new(QuitCommand),
             Box::new(AddCommand),
             Box::new(EditCommand),
             Box::new(ShowCommand),
             Box::new(InfoCommand),
             Box::new(RemoveCommand),
+            Box::new(SortCommand),
+            Box::new(QuitCommand)
         ];
 
         Commands { commands }

@@ -23,7 +23,10 @@ fn run_prompt(task_list: &mut TaskList) {
         let command_list = commands::Commands::new();
         for c in command_list {
             if c.keywords().contains(&command) {
-                c.execute(arg, task_list).unwrap();
+                match c.execute(arg, task_list) {
+                    Ok(_) => task_list.save_to_file(),
+                    Err(e) => println!("{}", e),
+                }
                 continue 'outer;
             }
         }
