@@ -5,9 +5,17 @@ A simple command line app for managing todos.
 
 ```bash
 cargo build --release
-
-./target/release/stuff
 ```
+### Add to path
+fish: in your `config.fish` add
+```bash
+set PATH $PATH [path to stuff folder]/target/release
+```
+bash: in your `.bashrc` add
+```bash
+export PATH="$HOME/Documents/coding/stuff/target/release:$PATH"
+```
+
 
 ## Usage
 
