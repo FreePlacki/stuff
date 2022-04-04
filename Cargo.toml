@@ -2,6 +2,7 @@
 name = "stuff"
 version = "0.1.0"
 authors = ["Paweł Bielecki <bieleckipawel10@gmail.com>"]
+license = "MIT"
 description = "A simple terminal app for managing todos."
 homepage = "https://github.com/FreePlacki/stuff"
 repository = "https://github.com/FreePlacki/stuff"

@@ -41,3 +41,8 @@ Running `stuff` without any arguments will put you in an interactive mode.
     - `important` - sorts by importance.
 
 - `quit` - quits interactive mode.
+
+---
+
+### License
+Licensed under the [MIT license](LICENSE.txt).
