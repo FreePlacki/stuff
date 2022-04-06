@@ -82,7 +82,7 @@ impl Task {
             3 => print!("\x1b[1;37;31m{}\x1b[0m", self.title),
             2 => print!("\x1b[1;37;33m{}\x1b[0m", self.title),
             1 => print!("\x1b[1;37;36m{}\x1b[0m", self.title),
-            _ => print!("{}", self.title),
+            _ => print!("\x1b[1m{}\x1b[0m", self.title),
         }
 
         if let Some(due_date) = self.due_date {

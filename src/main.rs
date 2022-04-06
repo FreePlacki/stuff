@@ -4,12 +4,11 @@
 //! You can save the tasks to a file.
 mod commands;
 mod date;
-mod task;
 mod interface;
+mod task;
 
+use interface::{add_prompt, get_input};
 use task::TaskList;
-use interface::{get_input, add_prompt};
-
 
 fn run_prompt(task_list: &mut TaskList) {
     'outer: loop {
@@ -18,13 +17,20 @@ fn run_prompt(task_list: &mut TaskList) {
         let command = input.next().unwrap_or("");
         let arg = input.next().unwrap_or("");
 
-        if command == "" { continue; }
+        if command == "" {
+            continue;
+        }
 
         let command_list = commands::Commands::new();
         for c in command_list {
             if c.keywords().contains(&command) {
                 match c.execute(arg, task_list) {
-                    Ok(_) => task_list.save_to_file(),
+                    Ok(msg) => {
+                        if msg != "" {
+                            println!("\n\x1b[2;37;37m{}\x1b[0m", msg);
+                        }
+                        task_list.save_to_file()
+                    }
                     Err(e) => println!("{}", e),
                 }
                 continue 'outer;

@@ -1,11 +1,11 @@
 //! The command trait and commands structs.
 
 use crate::interface::{add_prompt, edit_prompt, get_input};
-use crate::task::{TaskList, Task};
+use crate::task::{TaskList};
 
 pub trait Command {
     fn keywords(&self) -> &[&str];
-    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String>;
+    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String>;
     fn help(&self) -> &str;
 }
 
@@ -15,13 +15,13 @@ impl Command for AddCommand {
         &["add", "a"]
     }
 
-    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
+    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
         if arg == "" {
             if task_list.last_shown.is_some() {
                 let last_task = &mut task_list.tasks[task_list.last_shown.unwrap() - 1];
                 println!("Adding sub-task to: {}", last_task.title);
                 last_task.add_sub_task(add_prompt());
-                return Ok(());
+                return Ok("Task added".into());
             }
             let task = add_prompt();
             task_list.add_task(task);
@@ -37,7 +37,7 @@ impl Command for AddCommand {
             task_list.tasks[task_ind - 1].add_sub_task(task);
         }
 
-        Ok(())
+        Ok("Task added".into())
     }
 
     fn help(&self) -> &str {
@@ -51,7 +51,7 @@ impl Command for EditCommand {
         &["edit", "e"]
     }
 
-    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
+    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
         let task_id: usize = if arg != "" {
             arg.parse().unwrap_or(0)
         } else {
@@ -67,7 +67,7 @@ impl Command for EditCommand {
             return Err("Task ID must be a positive number!".into());
         }
 
-        Ok(())
+        Ok("Task edited".into())
     }
 
     fn help(&self) -> &str {
@@ -81,7 +81,7 @@ impl Command for ShowCommand {
         &["show", "s"]
     }
 
-    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
+    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
         if task_list.tasks.is_empty() {
             return Err("No tasks to show!".into());
         }
@@ -91,7 +91,7 @@ impl Command for ShowCommand {
                 let task = &task_list.tasks[last_shown - 1];
                 return if ind > 0 && ind <= task.sub_tasks.len() {
                     task.sub_tasks[ind - 1].print_task();
-                    Ok(())
+                    Ok("".into())
                 } else if ind > task.sub_tasks.len() {
                     Err(format!("Last id is {}!", task.sub_tasks.len()))
                 } else {
@@ -102,7 +102,7 @@ impl Command for ShowCommand {
             return if ind > 0 && ind <= task_list.tasks.len() {
                 task_list.tasks[ind - 1].print_task();
                 task_list.last_shown = Some(ind);
-                Ok(())
+                Ok("".into())
             } else if ind > task_list.tasks.len() {
                 Err(format!("Last id is {}!", task_list.tasks.len()))
             } else {
@@ -111,7 +111,7 @@ impl Command for ShowCommand {
         } else {
             task_list.last_shown = None;
             task_list.print_tasks();
-            return Ok(());
+            return Ok("".into());
         }
     }
 
@@ -126,12 +126,12 @@ impl Command for InfoCommand {
         &["info", "i"]
     }
 
-    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
+    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
         let ind = arg.parse().unwrap_or(0);
         return if ind > 0 && ind <= task_list.tasks.len() {
             task_list.tasks[ind - 1].print_info();
             task_list.last_shown = Some(ind);
-            Ok(())
+            Ok("".into())
         } else if ind > task_list.tasks.len() {
             Err(format!("Last id is {}!", task_list.tasks.len()))
         } else {
@@ -150,7 +150,7 @@ impl Command for RemoveCommand {
         &["remove", "r"]
     }
 
-    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
+    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
         let ind = arg.parse().unwrap_or(0);
         let mut task_list_to_mod = &mut task_list.tasks;
         if task_list.last_shown == Some(ind) {
@@ -159,8 +159,8 @@ impl Command for RemoveCommand {
             }
         }
         return if ind > 0 && ind <= task_list_to_mod.len() {
-            task_list_to_mod.remove(ind - 1);
-            Ok(())
+            let removed = task_list_to_mod.remove(ind - 1);
+            Ok(format!("Task {} removed", removed.title))
         } else if ind > task_list_to_mod.len() {
             Err(format!("Last id is {}!", task_list_to_mod.len()))
         } else {
@@ -179,32 +179,32 @@ impl Command for SortCommand {
         &["sort"]
     }
 
-    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
+    fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
+        let mut msg = "Sorted by creation date".to_string();
         if arg == "" {
             task_list.sort_by_date_created();
-            println!("Sorted by date created.");
+            println!();
             task_list.print_tasks();
-            Ok(())
+            Ok(msg)
         } else {
             match arg {
                 "due" | "d" => {
                     task_list.sort_by_due();
-                    println!("Sorted by due date.");
+                    msg = "Sorted by due date.".into();
                 }
                 "importance" | "i" => {
                     task_list.sort_by_importance();
-                    println!("Sorted by importance.");
+                    msg = "Sorted by importance.".into();
                 }
                 "created" | "c" => {
                     task_list.sort_by_date_created();
-                    println!("Sorted by date created.");
                 }
                 _ => {
                     return Err("Invalid sort type!".into());
                 }
             }
             task_list.print_tasks();
-            Ok(())
+            Ok(msg)
         }
     }
 
@@ -219,7 +219,7 @@ impl Command for QuitCommand {
         &["quit", "exit", "q"]
     }
 
-    fn execute(&self, _arg: &str, _task_list: &mut TaskList) -> Result<(), String> {
+    fn execute(&self, _arg: &str, _task_list: &mut TaskList) -> Result<String, String> {
         println!("Good luck with your tasks ;)");
         std::process::exit(0);
     }
