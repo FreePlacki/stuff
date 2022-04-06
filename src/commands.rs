@@ -1,7 +1,7 @@
 //! The command trait and commands structs.
 
 use crate::interface::{add_prompt, edit_prompt, get_input};
-use crate::task::{TaskList};
+use crate::task::TaskList;
 
 pub trait Command {
     fn keywords(&self) -> &[&str];
@@ -17,24 +17,22 @@ impl Command for AddCommand {
 
     fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
         if arg == "" {
-            if task_list.last_shown.is_some() {
-                let last_task = &mut task_list.tasks[task_list.last_shown.unwrap() - 1];
+            if let Some(last_shown) = task_list.last_shown {
+                let last_task = &mut task_list.tasks[last_shown - 1];
                 println!("Adding sub-task to: {}", last_task.title);
                 last_task.add_sub_task(add_prompt());
-                return Ok("Task added".into());
+            } else {
+                task_list.add_task(add_prompt());
             }
-            let task = add_prompt();
-            task_list.add_task(task);
         } else {
-            let task_ind: usize = arg.parse().unwrap_or(0);
-            if task_ind < 1 || task_ind > task_list.tasks.len() {
+            let ind: usize = arg.parse().unwrap_or(0);
+            if ind < 1 || ind > task_list.tasks.len() {
                 return Err(format!(
                     "Task index must be a number between 1 and {}!",
                     task_list.tasks.len()
                 ));
             }
-            let task = add_prompt();
-            task_list.tasks[task_ind - 1].add_sub_task(task);
+            task_list.tasks[ind - 1].add_sub_task(add_prompt());
         }
 
         Ok("Task added".into())
@@ -107,7 +105,7 @@ impl Command for ShowCommand {
                 Err(format!("Last id is {}!", task_list.tasks.len()))
             } else {
                 Err("Task ID must be a positive number!".into())
-            }
+            };
         } else {
             task_list.last_shown = None;
             task_list.print_tasks();
@@ -127,7 +125,12 @@ impl Command for InfoCommand {
     }
 
     fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
-        let ind = arg.parse().unwrap_or(0);
+        let ind: usize = if arg != "" {
+            arg.parse().unwrap_or(0)
+        } else {
+            get_input!("Task ID: ", "").parse().unwrap_or(0)
+        };
+
         return if ind > 0 && ind <= task_list.tasks.len() {
             task_list.tasks[ind - 1].print_info();
             task_list.last_shown = Some(ind);
@@ -151,16 +154,22 @@ impl Command for RemoveCommand {
     }
 
     fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<String, String> {
-        let ind = arg.parse().unwrap_or(0);
+        let ind: usize = if arg != "" {
+            arg.parse().unwrap_or(0)
+        } else {
+            get_input!("Task ID: ", "").parse().unwrap_or(0)
+        };
+
         let mut task_list_to_mod = &mut task_list.tasks;
-        if task_list.last_shown == Some(ind) {
-            if ind > 0 && ind <= task_list_to_mod[ind - 1].sub_tasks.len() {
-                task_list_to_mod = &mut task_list_to_mod[ind - 1].sub_tasks;
+        if let Some(last_shown) = task_list.last_shown {
+            if ind > 0 && ind <= task_list_to_mod[last_shown - 1].sub_tasks.len() {
+                task_list_to_mod = &mut task_list_to_mod[last_shown - 1].sub_tasks;
             }
         }
+
         return if ind > 0 && ind <= task_list_to_mod.len() {
             let removed = task_list_to_mod.remove(ind - 1);
-            Ok(format!("Task {} removed", removed.title))
+            Ok(format!("Task '{}' removed", removed.title))
         } else if ind > task_list_to_mod.len() {
             Err(format!("Last id is {}!", task_list_to_mod.len()))
         } else {
@@ -183,7 +192,6 @@ impl Command for SortCommand {
         let mut msg = "Sorted by creation date".to_string();
         if arg == "" {
             task_list.sort_by_date_created();
-            println!();
             task_list.print_tasks();
             Ok(msg)
         } else {
@@ -242,7 +250,7 @@ impl Commands {
             Box::new(InfoCommand),
             Box::new(RemoveCommand),
             Box::new(SortCommand),
-            Box::new(QuitCommand)
+            Box::new(QuitCommand),
         ];
 
         Commands { commands }
