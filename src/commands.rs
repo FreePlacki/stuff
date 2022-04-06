@@ -1,7 +1,7 @@
 //! The command trait and commands structs.
 
 use crate::interface::{add_prompt, edit_prompt, get_input};
-use crate::task::TaskList;
+use crate::task::{TaskList, Task};
 
 pub trait Command {
     fn keywords(&self) -> &[&str];
@@ -152,11 +152,17 @@ impl Command for RemoveCommand {
 
     fn execute(&self, arg: &str, task_list: &mut TaskList) -> Result<(), String> {
         let ind = arg.parse().unwrap_or(0);
-        return if ind > 0 && ind <= task_list.tasks.len() {
-            task_list.tasks.remove(ind - 1);
+        let mut task_list_to_mod = &mut task_list.tasks;
+        if task_list.last_shown == Some(ind) {
+            if ind > 0 && ind <= task_list_to_mod[ind - 1].sub_tasks.len() {
+                task_list_to_mod = &mut task_list_to_mod[ind - 1].sub_tasks;
+            }
+        }
+        return if ind > 0 && ind <= task_list_to_mod.len() {
+            task_list_to_mod.remove(ind - 1);
             Ok(())
-        } else if ind > task_list.tasks.len() {
-            Err(format!("Last id is {}!", task_list.tasks.len()))
+        } else if ind > task_list_to_mod.len() {
+            Err(format!("Last id is {}!", task_list_to_mod.len()))
         } else {
             Err("Task ID must be a positive number!".into())
         };
